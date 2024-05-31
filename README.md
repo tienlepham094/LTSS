@@ -6,3 +6,9 @@ https://github.com/Lehmannhen/MPI-Dijkstra/tree/master
 mpicc linear.c -o linear -lm
 mpirun linear
 ```
+
+**Run dijsktra.c**
+```
+mpicc dijsktra.c -o dijsktra
+mpirun dijsktra < input.txt
+```
