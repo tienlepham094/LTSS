@@ -28,6 +28,8 @@ int main(int argc, char *argv[])
     double totalTime = MPI_Wtime();
     double comTime = 0;
     double comSTime = 0;
+    double T_w_com = 0.0; // Total time with communication
+    double T_wo_com = 0.0; 
 
     FILE *file;
     file = fopen("linear.train", "r");
@@ -144,6 +146,7 @@ int main(int argc, char *argv[])
     int step = 0;
     while (step < MAX_STEP)
     {
+        double start_step = MPI_Wtime();
         part_mse = 0;
         if (machine_id == 0)
         {
@@ -199,7 +202,7 @@ int main(int argc, char *argv[])
                     part_grad[i] += X_batch[j][i] * temp_values[j];
                 }
             }
-
+            T_wo_com += MPI_Wtime() - start_step;
             /*
                 Combine grad and update weight using REDUCE
             */
@@ -221,6 +224,7 @@ int main(int argc, char *argv[])
             {
                 comTime += MPI_Wtime() - comSTime;
             }
+            T_w_com += MPI_Wtime() - start_step; 
             /* ===================================================================================*/
 
             /*
@@ -380,10 +384,14 @@ int main(int argc, char *argv[])
     free(temp_values);
     totalTime = MPI_Wtime() - totalTime;
     // print Time, BTime
+
+    totalTime = MPI_Wtime() - totalTime;
     if (machine_id == 0)
     {
-        printf("\nCommunication Time: %.3f\n", comTime);
-        printf("Total Time: %.3f\n\n", totalTime);
+        printf("\nCommunication Time (T_com): %.3f seconds\n", comTime);
+        printf("Total Time (T_w_com): %.3f seconds\n", T_w_com);
+        printf("Total Time (without communication, T_wo_com): %.3f seconds\n\n", T_wo_com); 
+        printf("Total Execution Time: %.3f seconds\n\n", totalTime);
     }
     return 0;
 }
