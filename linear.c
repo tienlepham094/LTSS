@@ -384,14 +384,11 @@ int main(int argc, char *argv[])
     free(temp_values);
     totalTime = MPI_Wtime() - totalTime;
     // print Time, BTime
-
-    totalTime = MPI_Wtime() - totalTime;
     if (machine_id == 0)
     {
         printf("\nCommunication Time (T_com): %.3f seconds\n", comTime);
         printf("Total Time (T_w_com): %.3f seconds\n", T_w_com);
         printf("Total Time (without communication, T_wo_com): %.3f seconds\n\n", T_wo_com); 
-        printf("Total Execution Time: %.3f seconds\n\n", totalTime);
     }
     return 0;
 }
