@@ -2,6 +2,7 @@ https://github.com/hoangdzung/LR_MPI/tree/master </br >
 https://github.com/Lehmannhen/MPI-Dijkstra/tree/master
 
 **Update cỳ anh**
+#linear.c dang bi sai thoi gian
 ### chạy test_train_gen.py trước khi chạy linear.c
 ```
 python3 test_train_gen.py
