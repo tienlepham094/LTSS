@@ -65,9 +65,26 @@ int main(int argc, char **argv)
     MPI_Comm_size(comm, &p);
     n = Read_n(my_rank, comm);
     loc_n = n / p;
+    // Validate the number of vertices and processes
+    if (n % p != 0)
+    {
+        if (my_rank == 0)
+        {
+            fprintf(stderr, "Number of vertices must be evenly divisible by number of processes.\n");
+        }
+        MPI_Finalize();
+        exit(-1);
+    }
     loc_mat = malloc(n * loc_n * sizeof(int));
     loc_dist = malloc(loc_n * sizeof(int));
     loc_pred = malloc(loc_n * sizeof(int));
+    if (loc_mat == NULL || loc_dist == NULL || loc_pred == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed\n");
+        MPI_Finalize();
+        exit(-1);
+    }
+
     blk_col_mpi_t = Build_blk_col_type(n, loc_n);
 
     if (my_rank == 0)
