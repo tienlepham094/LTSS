@@ -64,17 +64,20 @@ int main(int argc, char **argv)
     MPI_Comm_rank(comm, &my_rank);
     MPI_Comm_size(comm, &p);
     n = Read_n(my_rank, comm);
+    // printf("My rank: %d\n", my_rank);
+    // printf("N: %d\n", n);
+    // printf("P: %d\n", p);
     loc_n = n / p;
     // Validate the number of vertices and processes
-    if (n % p != 0)
-    {
-        if (my_rank == 0)
-        {
-            fprintf(stderr, "Number of vertices must be evenly divisible by number of processes.\n");
-        }
-        MPI_Finalize();
-        exit(-1);
-    }
+    // if (n % p != 0)
+    // {
+    //     if (my_rank == 0)
+    //     {
+    //         fprintf(stderr, "Number of vertices must be evenly divisible by number of processes.\n");
+    //     }
+    //     MPI_Finalize();
+    //     exit(-1);
+    // }
     loc_mat = malloc(n * loc_n * sizeof(int));
     loc_dist = malloc(loc_n * sizeof(int));
     loc_pred = malloc(loc_n * sizeof(int));
@@ -204,8 +207,9 @@ MPI_Datatype Build_blk_col_type(int n, int loc_n)
 void Read_matrix(int loc_mat[], int n, int loc_n,
                  MPI_Datatype blk_col_mpi_t, int my_rank, MPI_Comm comm)
 {
-    int *mat = NULL, i, j;
-
+    int *mat = NULL;
+    int i = 0;
+    int j = 0;
     if (my_rank == 0)
     {
         mat = malloc(n * n * sizeof(int));
