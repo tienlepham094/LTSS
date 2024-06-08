@@ -37,15 +37,16 @@ int main(int argc, char *argv[])
     // printf("Data dim %d\n", data_dim);
     // printf("Samples %d\n", n_samples);
     // Read matrix data , X = original values, append 1 for bias
+    if(n_samples <1000){
+        BATCH_SIZE = 1;
+    }
     double **X = (double **)malloc(n_samples * sizeof(double *));
     for (int i = 0; i < n_samples; ++i)
         X[i] = malloc(data_dim * sizeof(double));
 
     double *Y = (double *)malloc(n_samples * sizeof(double));
     int n_batches = (int)n_samples / BATCH_SIZE;
-    if(n_batches ==0){
-        n_batches = 1;
-    }
+   
 
     // data_dim = data_dim -1;
     double *W = (double *)malloc(data_dim * sizeof(double));
