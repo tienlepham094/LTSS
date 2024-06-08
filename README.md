@@ -31,6 +31,7 @@ Tham số đầu vào lần lượt là kích cỡ ma trận
 mpicc dijsktra.c -o dijsktra
 mpirun dijsktra < matrix.txt
 ```
-
-
-
+Mount nfs 
+```
+sudo mount 172.20.10.9:/home/openmpi/Desktop/sharedfolder /home/openmpi/Desktop/sharedfolder
+```
