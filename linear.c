@@ -77,8 +77,9 @@ int main(int argc, char *argv[])
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &machine_id);
 
     // Start Total Time
-    if (machine_id == 0) {
-      totalTime = MPI_Wtime();
+    if (machine_id == 0)
+    {
+        totalTime = MPI_Wtime();
     }
     comTime = 0;
 
@@ -220,9 +221,9 @@ int main(int argc, char *argv[])
             ierr = MPI_Bcast(W, data_dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
             if (machine_id == 0)
             {
-            comTime += MPI_Wtime() - comSTime;
+                comTime += MPI_Wtime() - comSTime;
             }
-            T_w_com += MPI_Wtime() - start_step; 
+            T_w_com += MPI_Wtime() - start_step;
             /* ===================================================================================*/
 
             /*
@@ -386,6 +387,42 @@ int main(int argc, char *argv[])
         printf("\nCommunication Time: %.3f\n", comTime);
         printf("Total Time (T_w_com): %.3f\n", totalTime);
         printf("Total Time (T_wo_com): %.3f\n\n", totalTime - comTime);
+
+        // open file
+        FILE *linear_graph_nT = NULL;
+        linear_graph_nT = fopen("linear_graph_nT.txt", "a");
+        if (linear_graph_nT == NULL)
+        {
+            fprintf(stderr, "Error opening output file linear_graph_nT\n");
+            MPI_Finalize();
+            exit(-1);
+        }
+        else
+        {
+            printf("opening output file linear_graph_nT\n");
+        }
+        fprintf(linear_graph_nT, "%d, ", n_samples);           // so luong mau
+        fprintf(linear_graph_nT, "%f, ", totalTime);           // t_w_comm
+        fprintf(linear_graph_nT, "%f\n", totalTime - comTime); // t_wo_comm:
+        fclose(linear_graph_nT);
+
+        // open file
+        FILE *linear_graph_nCPUT = NULL;
+        linear_graph_nCPUT = fopen("linear_graph_nCPUT.txt", "a");
+        if (linear_graph_nCPUT == NULL)
+        {
+            fprintf(stderr, "Error opening output file linear_graph_nCPUT\n");
+            MPI_Finalize();
+            exit(-1);
+        }
+        else
+        {
+            printf("opening output file linear_graph_nCPUT\n");
+        }
+        fprintf(linear_graph_nCPUT, "%d, ", n_machines);          // so luong mau
+        fprintf(linear_graph_nCPUT, "%f, ", totalTime);           // t_w_comm
+        fprintf(linear_graph_nCPUT, "%f\n", totalTime - comTime); // t_wo_comm:
+        fclose(linear_graph_nCPUT);
     }
     return 0;
 }
