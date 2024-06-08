@@ -1,5 +1,5 @@
 import random
-
+import math
 def generate_linear_data(n_samples, data_dim, filename):
   """Tạo dữ liệu ngẫu nhiên cho bài toán hồi quy tuyến tính và lưu vào file.
 
@@ -24,7 +24,7 @@ def generate_linear_data(n_samples, data_dim, filename):
       label = random.randint(1, 3)    
       f.write(" ".join(str(x) for x in features) + f" {label}\n")  # Ghi dữ liệu vào file
 
-n_samples = int(input("so luogn mau:"))
+n_samples = int(input("so luong mau:"))
 data_dim = int(input("so chieu du lieu:"))
 
 # Tạo file linear.train
@@ -32,6 +32,6 @@ generate_linear_data(n_samples, data_dim, "linear.train")
 print(f"Đã tạo file 'linear.train' với {n_samples} mẫu, {data_dim - 1} features.")
 
 # Tạo file linear.test (sử dụng 20% dữ liệu cho kiểm tra)
-n_samples_test = int(n_samples) #*0.2
+n_samples_test = math.ceil(n_samples * 0.2) #*0.2
 generate_linear_data(n_samples_test, data_dim, "linear.test")
 print(f"Đã tạo file 'linear.test' với {n_samples_test} mẫu, {data_dim - 1} features.")

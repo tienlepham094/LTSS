@@ -12,8 +12,8 @@ int main(int argc, char *argv[])
 {
     int DEBUG = 0;
     int EVAL_STEP = 100;
-    int MAX_STEP = 100;
-    int BATCH_SIZE = 1024;
+    int MAX_STEP = 300;
+    int BATCH_SIZE = 4;
     double LR = 0.001;
 
     double part_mse = 0;
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 
     int machine_id;
     int n_machines;
-    int ierr;
+
     double totalTime, comTime, comSTime;
     double T_w_com = 0.0; // Total time with communication
     double T_wo_com = 0.0;
@@ -34,7 +34,8 @@ int main(int argc, char *argv[])
 
     fscanf(file, "%d", &n_samples);
     fscanf(file, "%d", &data_dim);
-
+    // printf("Data dim %d\n", data_dim);
+    // printf("Samples %d\n", n_samples);
     // Read matrix data , X = original values, append 1 for bias
     double **X = (double **)malloc(n_samples * sizeof(double *));
     for (int i = 0; i < n_samples; ++i)
@@ -42,6 +43,10 @@ int main(int argc, char *argv[])
 
     double *Y = (double *)malloc(n_samples * sizeof(double));
     int n_batches = (int)n_samples / BATCH_SIZE;
+    if(n_batches ==0){
+        n_batches = 1;
+    }
+
     // data_dim = data_dim -1;
     double *W = (double *)malloc(data_dim * sizeof(double));
     double *grad = (double *)malloc(data_dim * sizeof(double));
@@ -54,7 +59,7 @@ int main(int argc, char *argv[])
         for (int j = 0; j < data_dim - 1; j++)
             if (!fscanf(file, "%lf", &X[i][j]))
                 break;
-        X[i][data_dim - 1] = 1;
+        X[i][data_dim-1] = 1; // set bias
         if (!fscanf(file, "%lf", &Y[i]))
             break;
     }
@@ -64,17 +69,17 @@ int main(int argc, char *argv[])
     /*
         Initialize MPI.
     */
-    ierr = MPI_Init(&argc, &argv);
+    MPI_Init(&argc, &argv);
 
     /*
         Get the number of processes.
     */
-    ierr = MPI_Comm_size(MPI_COMM_WORLD, &n_machines);
+    MPI_Comm_size(MPI_COMM_WORLD, &n_machines);
 
     /*
         Determine this processes's rank.
     */
-    ierr = MPI_Comm_rank(MPI_COMM_WORLD, &machine_id);
+    MPI_Comm_rank(MPI_COMM_WORLD, &machine_id);
 
     // Start Total Time
     if (machine_id == 0)
@@ -142,7 +147,7 @@ int main(int argc, char *argv[])
 
     // BCast init weight to all machine
     comSTime = MPI_Wtime();
-    ierr = MPI_Bcast(W, data_dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(W, data_dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     comTime += MPI_Wtime() - comSTime;
 
     int step = 0;
@@ -157,7 +162,7 @@ int main(int argc, char *argv[])
         }
 
         // BCast shuffled index to all machine
-        ierr = MPI_Bcast(index, n_samples, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(index, n_samples, MPI_INT, 0, MPI_COMM_WORLD);
         if (machine_id == 0)
         {
             comTime += MPI_Wtime() - comSTime;
@@ -165,6 +170,7 @@ int main(int argc, char *argv[])
 
         int batch_id = 0;
         int start = 0;
+
         while (batch_id < n_batches)
         {
             start = batch_id * BATCH_SIZE;
@@ -189,8 +195,10 @@ int main(int argc, char *argv[])
 
                 if (step % EVAL_STEP == 0)
                 {
+
                     part_mse += (temp_values[i] - Y_batch[i]) * (temp_values[i] - Y_batch[i]);
-                    // printf("Step %d %d Part mse: %.4f", step, machine_id, part_mse);
+                    // printf("temp value %.4f y bath %.4f\n", temp_values[i], Y_batch[i]);
+                    // printf("Step %d %d Part mse: %.4f\n", step, machine_id, part_mse);
                 }
 
                 temp_values[i] -= Y_batch[i];
@@ -209,7 +217,7 @@ int main(int argc, char *argv[])
                 Combine grad and update weight using REDUCE
             */
             comSTime = MPI_Wtime();
-            ierr = MPI_Reduce(part_grad, grad, data_dim, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+            MPI_Reduce(part_grad, grad, data_dim, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
             if (machine_id == 0)
             {
                 for (int i = 0; i < data_dim; i++)
@@ -218,7 +226,7 @@ int main(int argc, char *argv[])
                 }
             }
             // BCast updated weight to all machine
-            ierr = MPI_Bcast(W, data_dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+            MPI_Bcast(W, data_dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
             if (machine_id == 0)
             {
                 comTime += MPI_Wtime() - comSTime;
@@ -246,12 +254,14 @@ int main(int argc, char *argv[])
         if (step % EVAL_STEP == 0)
         {
             comSTime = MPI_Wtime();
-            ierr = MPI_Reduce(&part_mse, &mse, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+            MPI_Reduce(&part_mse, &mse, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
             if (machine_id == 0)
             {
                 comTime += MPI_Wtime() - comSTime;
-                mse = sqrt(mse / (n_batches * BATCH_SIZE));
-                printf("Step %d mse %lf\n", step, mse);
+                if(mse != 0){
+                    mse = sqrt(mse / (n_batches * BATCH_SIZE));
+                }
+                printf("Step %d mse %f\n", step, mse);
             }
         }
         step++;
@@ -281,7 +291,7 @@ int main(int argc, char *argv[])
     double *Y_test = (double *)malloc(n_samples_test * sizeof(double));
 
     n_batches = (int)n_samples_test / BATCH_SIZE;
-
+  
     if (data_dim_test != data_dim)
     {
         printf("File test error\n");
@@ -329,18 +339,20 @@ int main(int argc, char *argv[])
         batch_id++;
     }
     comSTime = MPI_Wtime();
-    ierr = MPI_Reduce(&part_mse, &mse, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&part_mse, &mse, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     if (machine_id == 0)
     {
         comTime += MPI_Wtime() - comSTime;
-        mse = sqrt(mse / (n_batches * BATCH_SIZE));
+        if(mse !=0){
+            mse = sqrt(mse / (n_batches * BATCH_SIZE));
+        }
         printf("Test mse %lf\n", mse);
     }
 
     /*
         Terminate MPI.
     */
-    ierr = MPI_Finalize();
+    MPI_Finalize();
 
     /*
         Terminate.
@@ -428,33 +440,6 @@ int main(int argc, char *argv[])
 }
 
 void timestamp(void)
-
-/******************************************************************************/
-/*
-  Purpose:
-
-    TIMESTAMP prints the current YMDHMS date as a time stamp.
-
-  Example:
-
-    31 May 2001 09:45:54 AM
-
-  Licensing:
-
-    This code is distributed under the GNU LGPL license.
-
-  Modified:
-
-    24 September 2003
-
-  Author:
-
-    John Burkardt
-
-  Parameters:
-
-    None
-*/
 {
 #define TIME_SIZE 40
 

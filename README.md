@@ -35,3 +35,7 @@ Mount nfs
 ```
 sudo mount 172.20.10.9:/home/openmpi/Desktop/sharedfolder /home/openmpi/Desktop/sharedfolder
 ```
+run 
+```
+mpirun --hostfile /etc/hosts -np 5 ./outputfile
+```
