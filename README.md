@@ -6,7 +6,7 @@ https://github.com/Lehmannhen/MPI-Dijkstra/tree/master
 ```
 python3 test_train_gen.py
 ```
-2 tham số lần lượt là số lượng mẫu(n_samples) và số chiều (đã tinhs cả nhãn)
+2 tham số lần lượt là số lượng mẫu(n_samples) và số chiều %%Update%%
 
 **Run linear.c**
 ```
