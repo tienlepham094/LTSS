@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     int DEBUG = 0;
     int EVAL_STEP = 100;
     int MAX_STEP = 300;
-    int BATCH_SIZE = 4;
+    int BATCH_SIZE = 1024;
     double LR = 0.001;
 
     double part_mse = 0;
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     // printf("Samples %d\n", n_samples);
     // Read matrix data , X = original values, append 1 for bias
     if(n_samples <1000){
-        BATCH_SIZE = 1;
+        BATCH_SIZE = 64;
     }
     double **X = (double **)malloc(n_samples * sizeof(double *));
     for (int i = 0; i < n_samples; ++i)

@@ -1,37 +1,67 @@
+import numpy as np
 import random
-import math
-def generate_linear_data(n_samples, data_dim, filename):
-  """Tạo dữ liệu ngẫu nhiên cho bài toán hồi quy tuyến tính và lưu vào file.
+
+def generate_linear_data(n_samples, num_attributes, noise_scale=0.5):
+  """Generates a linear dataset with random features and labels.
 
   Args:
-    n_samples: Số lượng mẫu dữ liệu.
-    data_dim: Số chiều dữ liệu (số lượng features).
-    filename: Tên file để lưu dữ liệu.
+    n_samples: The number of samples to generate.
+    num_attributes: The number of attributes (features).
+    noise_scale: The scale of random noise added to the labels.
+
+  Returns:
+    A tuple containing:
+      - X: A numpy array of shape (n_samples, num_attributes) representing features.
+      - Y: A numpy array of shape (n_samples,) representing labels.
   """
 
-  with open(filename, "w") as f:
-    f.write(f"{n_samples} {data_dim}\n") 
+  weights = np.random.randn(num_attributes)
 
-    for _ in range(n_samples):
-      features = []
-      for _ in range(data_dim - 1):
-        # Tạo feature ngẫu nhiên khác 0
-        feature = 0
-        while feature == 0:  # Lặp lại cho đến khi feature khác 0
-          feature = round(random.uniform(-2, 2), 1)
-        features.append(feature)
-      #label = round(sum(features) + random.gauss(0, 1), 2) # Tạo nhãn (tổng features + nhiễu Gaussian)
-      label = random.randint(1, 3)    
-      f.write(" ".join(str(x) for x in features) + f" {label}\n")  # Ghi dữ liệu vào file
+  X = np.random.rand(n_samples, num_attributes)
 
-n_samples = int(input("so luong mau:"))
-data_dim = int(input("so chieu du lieu:"))
+  X += np.random.randn(n_samples, num_attributes) * noise_scale  
+  X = np.round(X, 1)
+  
+  Y = np.dot(X, weights) + np.random.randn(n_samples) * noise_scale
+  Y = np.round(Y, 1)
 
-# Tạo file linear.train
-generate_linear_data(n_samples, data_dim, "linear.train")
-print(f"Đã tạo file 'linear.train' với {n_samples} mẫu, {data_dim - 1} features.")
+  return X, Y
 
-# Tạo file linear.test (sử dụng 20% dữ liệu cho kiểm tra)
-n_samples_test = math.ceil(n_samples * 0.2) #*0.2
-generate_linear_data(n_samples_test, data_dim, "linear.test")
-print(f"Đã tạo file 'linear.test' với {n_samples_test} mẫu, {data_dim - 1} features.")
+def save_data(filename, X, Y):
+  """Saves data to a file in the format expected by the C code.
+
+  Args:
+    filename: The name of the file to save the data.
+    X: The feature matrix.
+    Y: The label vector.
+  """
+
+  with open(filename, 'w') as f:
+    f.write(f"{X.shape[0]} {X.shape[1]+1}\n")
+    for i in range(X.shape[0]):
+      for j in range(X.shape[1]):
+        f.write(f"{X[i, j]} ")
+      f.write(f"{Y[i]}\n")
+
+if __name__ == "__main__":
+  n_samples = int(input("so luogn mau:"))
+  num_attributes = int(input("so chieu du lieu:"))
+  noise_scale = 0.5  # Adjust noise level as needed
+
+  # Generate training data
+  X, Y = generate_linear_data(n_samples, num_attributes, noise_scale)
+
+  # Split into train and test (80% train, 20% test)
+  train_size = int(0.8 * n_samples)
+  X_train = X[:train_size]
+  Y_train = Y[:train_size]
+  X_test = X[train_size:]
+  Y_test = Y[train_size:]
+
+  # Save the train data
+  save_data("linear.train", X_train, Y_train)
+
+  # Save the test data
+  save_data("linear.test", X_test, Y_test)
+
+  print("Da tao du lieu va luu vao file 'linear.train' va 'linear.test'")

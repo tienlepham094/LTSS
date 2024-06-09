@@ -16,7 +16,7 @@ def generate_matrix(size):
           # Chọn ngẫu nhiên giữa 1 và 2, nếu là 1 thì trọng số từ 1-30, 
           # nếu là 2 thì trọng số là 999
           choice = random.randint(1, 2) 
-          weight = random.randint(1, 30) if choice == 1 else 999  
+          weight = random.randint(1, 30) #if choice == 1 else 999  
         row.append(weight)
     matrix.append(row)
 
