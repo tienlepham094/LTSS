@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     int DEBUG = 0;
     int EVAL_STEP = 100;
     int MAX_STEP = 300;
-    int BATCH_SIZE = 1024;
+    int BATCH_SIZE = 16;
     double LR = 0.001;
 
     double part_mse = 0;
@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
     // printf("Data dim %d\n", data_dim);
     // printf("Samples %d\n", n_samples);
     // Read matrix data , X = original values, append 1 for bias
-    if(n_samples <1000){
-        BATCH_SIZE = 64;
+    if(n_samples <=100){
+        BATCH_SIZE = 2;
     }
     double **X = (double **)malloc(n_samples * sizeof(double *));
     for (int i = 0; i < n_samples; ++i)
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
     double *Y = (double *)malloc(n_samples * sizeof(double));
     int n_batches = (int)n_samples / BATCH_SIZE;
-   
+    printf("n_batches %d\n", n_batches);
 
     // data_dim = data_dim -1;
     double *W = (double *)malloc(data_dim * sizeof(double));
@@ -175,6 +175,7 @@ int main(int argc, char *argv[])
         while (batch_id < n_batches)
         {
             start = batch_id * BATCH_SIZE;
+            
             for (int i = 0; i < batch_size_per_machine; i++)
             {
                 for (int j = 0; j < data_dim; j++)
@@ -196,7 +197,6 @@ int main(int argc, char *argv[])
 
                 if (step % EVAL_STEP == 0)
                 {
-
                     part_mse += (temp_values[i] - Y_batch[i]) * (temp_values[i] - Y_batch[i]);
                     // printf("temp value %.4f y bath %.4f\n", temp_values[i], Y_batch[i]);
                     // printf("Step %d %d Part mse: %.4f\n", step, machine_id, part_mse);
@@ -233,18 +233,7 @@ int main(int argc, char *argv[])
                 comTime += MPI_Wtime() - comSTime;
             }
             T_w_com += MPI_Wtime() - start_step;
-            /* ===================================================================================*/
-
-            /*
-                Combine grad and update weight using ALLREDUCE
-            */
-            /* ===================================================================================*/
-            // ierr = MPI_Allreduce(part_grad, grad, data_dim, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-            // for (int i =0;i<data_dim;i++) {
-            //     W[i] = W[i] -LR * grad[i];
-            // }
-            /* ===================================================================================*/
+            
             if (DEBUG)
             {
                 for (int i = 0; i < data_dim; i++)
@@ -284,7 +273,11 @@ int main(int argc, char *argv[])
 
     fscanf(file, "%d", &n_samples_test);
     fscanf(file, "%d", &data_dim_test);
-
+    
+    if(n_samples_test<100){
+        BATCH_SIZE = 2;
+    }else
+        BATCH_SIZE = 16;
     double **X_test = (double **)malloc(n_samples_test * sizeof(double *));
     for (int i = 0; i < n_samples_test; ++i)
         X_test[i] = malloc(data_dim * sizeof(double));

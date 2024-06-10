@@ -44,7 +44,7 @@ def save_data(filename, X, Y):
       f.write(f"{Y[i]}\n")
 
 if __name__ == "__main__":
-  n_samples = int(input("so luogn mau:"))
+  n_samples = int(input("so luong mau:"))
   num_attributes = int(input("so chieu du lieu:"))
   noise_scale = 0.5  # Adjust noise level as needed
 
