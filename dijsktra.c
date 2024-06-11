@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
     /* Print results */
     if (my_rank == 0)
-    {
+    {   
         Print_dists(global_dist, n);
         Print_paths(global_pred, n);
         FILE *dijkstra_graph_nT = NULL;
@@ -186,7 +186,6 @@ void Read_matrix(int loc_mat[], int n, int loc_n,
             for (j = 0; j < n; j++)
                 scanf("%d", &mat[i * n + j]);
     }
-
     // Bat dau do thoi gian truyen thong
     double start = MPI_Wtime();
     MPI_Scatter(mat, 1, blk_col_mpi_t, loc_mat, n * loc_n, MPI_INT, 0, comm);

@@ -29,7 +29,9 @@ Tham số đầu vào lần lượt là kích cỡ ma trận
 
 ```
 mpicc dijsktra.c -o dijsktra
-mpirun dijsktra < matrix.txt
+mpirun -np 3 dijsktra < input2.txt
+(chu y so process va size cua ma tran)
+
 ```
 Mount nfs 
 ```
