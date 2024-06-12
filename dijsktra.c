@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#define INFINITY 1000000
+#define INFINITY 999
 
 int Read_n(int my_rank, MPI_Comm comm);
 MPI_Datatype Build_blk_col_type(int n, int loc_n);
