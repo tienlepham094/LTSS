@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 {
     int DEBUG = 0;
     int EVAL_STEP = 100;
-    int MAX_STEP = 300;
+    int MAX_STEP = 500;
     int BATCH_SIZE = 16;
     double LR = 0.001;
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
     double *Y = (double *)malloc(n_samples * sizeof(double));
     int n_batches = (int)n_samples / BATCH_SIZE;
-    printf("n_batches %d\n", n_batches);
+    // printf("n_batches %d\n", n_batches);
 
     // data_dim = data_dim -1;
     double *W = (double *)malloc(data_dim * sizeof(double));
@@ -152,6 +152,10 @@ int main(int argc, char *argv[])
     comTime += MPI_Wtime() - comSTime;
 
     int step = 0;
+    if (machine_id == 0)
+    {
+        printf("\nTraining .....\n");
+    }
     while (step < MAX_STEP)
     {
         double start_step = MPI_Wtime();
@@ -171,7 +175,7 @@ int main(int argc, char *argv[])
 
         int batch_id = 0;
         int start = 0;
-
+\
         while (batch_id < n_batches)
         {
             start = batch_id * BATCH_SIZE;
@@ -248,9 +252,7 @@ int main(int argc, char *argv[])
             if (machine_id == 0)
             {
                 comTime += MPI_Wtime() - comSTime;
-                if(mse != 0){
-                    mse = sqrt(mse / (n_batches * BATCH_SIZE));
-                }
+                mse = mse / n_samples;
                 printf("Step %d mse %f\n", step, mse);
             }
         }
@@ -274,7 +276,7 @@ int main(int argc, char *argv[])
     fscanf(file, "%d", &n_samples_test);
     fscanf(file, "%d", &data_dim_test);
     
-    if(n_samples_test<100){
+    if(n_samples_test<=100){
         BATCH_SIZE = 2;
     }else
         BATCH_SIZE = 16;
@@ -307,6 +309,9 @@ int main(int argc, char *argv[])
     int batch_id = 0;
     int start = 0;
     part_mse = 0;
+    double part_mae = 0;
+    double mae = 0;
+
     while (batch_id < n_batches)
     {
         start = batch_id * BATCH_SIZE;
@@ -329,18 +334,28 @@ int main(int argc, char *argv[])
                 temp_values[i] += X_batch[i][j] * W[j];
             }
             part_mse += (temp_values[i] - Y_batch[i]) * (temp_values[i] - Y_batch[i]);
+            part_mae += abs(temp_values[i] - Y_batch[i]);
         }
         batch_id++;
     }
     comSTime = MPI_Wtime();
     MPI_Reduce(&part_mse, &mse, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&part_mae, &mae, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
     if (machine_id == 0)
     {
         comTime += MPI_Wtime() - comSTime;
-        if(mse !=0){
-            mse = sqrt(mse / (n_batches * BATCH_SIZE));
+        double rmse = 0;
+        mse = mse / n_samples_test;
+        mae = mae / n_samples_test;
+        if (mse != 0)
+        {
+            rmse = sqrt(mse / (n_batches * BATCH_SIZE));
         }
+        printf("\n----Evaluate----\n");
         printf("Test mse %lf\n", mse);
+        printf("Test rmse %lf\n", rmse);
+        printf("Test mae %lf\n", mae);
     }
 
     /*
@@ -353,6 +368,7 @@ int main(int argc, char *argv[])
     */
     if (machine_id == 0)
     {
+        printf("\n-----Result-----\n");
         printf("W data\n");
         for (int i = 0; i < data_dim; i++)
         {
