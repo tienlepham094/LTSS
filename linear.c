@@ -26,8 +26,7 @@ int main(int argc, char *argv[])
     int n_machines;
 
     double totalTime, comTime, comSTime;
-    double T_w_com = 0.0; // Total time with communication
-    double T_wo_com = 0.0;
+    // double T_w_com = 0.0; // Total time with communication
 
     FILE *file;
     file = fopen("linear.train", "r");
@@ -147,9 +146,13 @@ int main(int argc, char *argv[])
     }
 
     // BCast init weight to all machine
-    comSTime = MPI_Wtime();
+    if(machine_id==0){
+        comSTime = MPI_Wtime(); 
+    }
     MPI_Bcast(W, data_dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    comTime += MPI_Wtime() - comSTime;
+    if(machine_id ==0){
+        comTime += MPI_Wtime() - comSTime;
+    }
 
     int step = 0;
     if (machine_id == 0)
@@ -158,7 +161,7 @@ int main(int argc, char *argv[])
     }
     while (step < MAX_STEP)
     {
-        double start_step = MPI_Wtime();
+        // double start_step = MPI_Wtime();
         part_mse = 0;
         if (machine_id == 0)
         {
@@ -217,12 +220,16 @@ int main(int argc, char *argv[])
                     part_grad[i] += X_batch[j][i] * temp_values[j];
                 }
             }
-            T_wo_com += MPI_Wtime() - start_step;
             /*
                 Combine grad and update weight using REDUCE
             */
-            comSTime = MPI_Wtime();
+            if(machine_id == 0){
+                comSTime = MPI_Wtime();
+            }
             MPI_Reduce(part_grad, grad, data_dim, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+            if(machine_id == 0){
+                comTime += MPI_Wtime() - comSTime;
+            }
             if (machine_id == 0)
             {
                 for (int i = 0; i < data_dim; i++)
@@ -231,12 +238,18 @@ int main(int argc, char *argv[])
                 }
             }
             // BCast updated weight to all machine
+            if(machine_id == 0){
+                comSTime = MPI_Wtime();
+            }
             MPI_Bcast(W, data_dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-            if (machine_id == 0)
-            {
+            if(machine_id == 0){
                 comTime += MPI_Wtime() - comSTime;
             }
-            T_w_com += MPI_Wtime() - start_step;
+            // if (machine_id == 0)
+            // {
+            //     comTime += MPI_Wtime() - comSTime;
+            // }
+            // T_w_com += MPI_Wtime() - start_step;
             
             if (DEBUG)
             {
@@ -247,8 +260,11 @@ int main(int argc, char *argv[])
         }
         if (step % EVAL_STEP == 0)
         {
-            comSTime = MPI_Wtime();
+            if(machine_id == 0){
+                comSTime = MPI_Wtime();
+            }
             MPI_Reduce(&part_mse, &mse, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+            // comTime += MPI_Wtime() - comSTime;
             if (machine_id == 0)
             {
                 comTime += MPI_Wtime() - comSTime;
@@ -263,7 +279,6 @@ int main(int argc, char *argv[])
         for (int i = 0; i < data_dim; i++)
             printf("Machine %d: W %lf\n", machine_id, W[i]);
     }
-    // totalTime = MPI_Wtime() - totalTime;
 
     /*
         Evaluation in test set
@@ -338,7 +353,9 @@ int main(int argc, char *argv[])
         }
         batch_id++;
     }
-    comSTime = MPI_Wtime();
+    if(machine_id == 0){
+        comSTime = MPI_Wtime();
+    }
     MPI_Reduce(&part_mse, &mse, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&part_mae, &mae, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
@@ -403,9 +420,9 @@ int main(int argc, char *argv[])
     free(X_batch);
     free(Y_batch);
     free(temp_values);
-    totalTime = MPI_Wtime() - totalTime;
     if (machine_id == 0)
     {
+        totalTime = MPI_Wtime() - totalTime;
         printf("\nCommunication Time: %.3f\n", comTime);
         printf("Total Time (T_w_com): %.3f\n", totalTime);
         printf("Total Time (T_wo_com): %.3f\n\n", totalTime - comTime);

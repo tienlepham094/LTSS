@@ -15,6 +15,7 @@ int Find_min_dist(int loc_dist[], int loc_known[], int loc_n);
 void Print_matrix(int global_mat[], int rows, int cols);
 void Print_dists(int global_dist[], int n);
 void Print_paths(int global_pred[], int n, int glob_dist[]);
+double start, end, comm_time, total_time=0;
 
 int main(int argc, char **argv)
 {
@@ -23,27 +24,20 @@ int main(int argc, char **argv)
     MPI_Comm comm;
     MPI_Datatype blk_col_mpi_t;
 
-    double start, end, comm_time, total_time;
 
     MPI_Init(NULL, NULL);
     comm = MPI_COMM_WORLD;
     MPI_Comm_rank(comm, &my_rank);
     MPI_Comm_size(comm, &p);
+    if(my_rank ==0 ){
+        total_time = MPI_Wtime();
+    }
     n = Read_n(my_rank, comm);
     // printf("My rank: %d\n", my_rank);
     // printf("N: %d\n", n);
     // printf("P: %d\n", p);
     loc_n = n / p;
-    // Validate the number of vertices and processes
-    // if (n % p != 0)
-    // {
-    //     if (my_rank == 0)
-    //     {
-    //         fprintf(stderr, "Number of vertices must be evenly divisible by number of processes.\n");
-    //     }
-    //     MPI_Finalize();
-    //     exit(-1);
-    // }
+
     loc_mat = malloc(n * loc_n * sizeof(int));
     loc_dist = malloc(loc_n * sizeof(int));
     loc_pred = malloc(loc_n * sizeof(int));
@@ -64,26 +58,31 @@ int main(int argc, char **argv)
     Read_matrix(loc_mat, n, loc_n, blk_col_mpi_t, my_rank, comm);
 
     // Bat dau do thoi gian
-    start = MPI_Wtime();
+    // start = MPI_Wtime();
     Dijkstra(loc_mat, loc_dist, loc_pred, loc_n, n, comm);
-    end = MPI_Wtime();
+    // end = MPI_Wtime();
     // ket thuc
 
-    total_time = end - start;
+    // total_time = end - start;
 
     /* Gather the results from Dijkstra */
     // do thoi gian truyen thong
     comm_time = 0;
-    start = MPI_Wtime();
+    if(my_rank == 0){
+        start = MPI_Wtime();
+    }
     MPI_Gather(loc_dist, loc_n, MPI_INT, global_dist, loc_n, MPI_INT, 0, comm);
     MPI_Gather(loc_pred, loc_n, MPI_INT, global_pred, loc_n, MPI_INT, 0, comm);
-    end = MPI_Wtime();
-    comm_time += end - start;
+    if(my_rank ==0){
+        end = MPI_Wtime();
+        comm_time += end - start;
+    }
     // ket thuc
 
     /* Print results */
     if (my_rank == 0)
     {
+        total_time += MPI_Wtime() - total_time;
         Print_dists(global_dist, n);
         Print_paths(global_pred, n, global_dist);
         FILE *dijkstra_graph_nT = NULL;
@@ -125,7 +124,8 @@ int main(int argc, char **argv)
     // In ket qua do tg
     if (my_rank == 0)
     {
-        printf("t_w_comm: %f s \n", total_time);
+        printf("total time: %f s\n", total_time);
+        printf("t_w_comm: %f s \n", comm_time);
         printf("t_wo_comm: %f s \n", total_time - comm_time);
     }
     free(loc_mat);
@@ -186,8 +186,15 @@ void Read_matrix(int loc_mat[], int n, int loc_n,
     }
     // Bat dau do thoi gian truyen thong
     // double start = MPI_Wtime();
+    if(my_rank ==0){
+        start = MPI_Wtime();
+    }
     MPI_Scatter(mat, 1, blk_col_mpi_t, loc_mat, n * loc_n, MPI_INT, 0, comm);
     // double end = MPI_Wtime();
+    if(my_rank ==0){
+        end = MPI_Wtime();
+        comm_time += end - start;
+    }
     if (my_rank == 0)
     {
         printf("----Matrix----\n");
@@ -254,12 +261,17 @@ void Dijkstra(int loc_mat[], int loc_dist[], int loc_pred[], int loc_n, int n,
         }
 
         // do thoi gian truyen thong
-        start = MPI_Wtime();
+        if(my_rank ==0){
+            start = MPI_Wtime();
+        }
         /* Get the minimum distance found by the processes and store that
            distance and the global vertex in glbl_min
         */
         MPI_Allreduce(my_min, glbl_min, 1, MPI_2INT, MPI_MINLOC, comm);
-        end = MPI_Wtime();
+        if(my_rank ==0){
+            end = MPI_Wtime();
+            comm_time += start - end;
+        }
         // ket thuc do thoi gian truyen thong
 
         // if (my_rank == 0) {
