@@ -14,7 +14,7 @@ void Dijkstra(int loc_mat[], int loc_dist[], int loc_pred[], int loc_n, int n,
 int Find_min_dist(int loc_dist[], int loc_known[], int loc_n);
 void Print_matrix(int global_mat[], int rows, int cols);
 void Print_dists(int global_dist[], int n);
-void Print_paths(int global_pred[], int n);
+void Print_paths(int global_pred[], int n, int glob_dist[]);
 
 int main(int argc, char **argv)
 {
@@ -81,13 +81,11 @@ int main(int argc, char **argv)
     comm_time += end - start;
     // ket thuc
 
-
-
     /* Print results */
     if (my_rank == 0)
-    {   
+    {
         Print_dists(global_dist, n);
-        Print_paths(global_pred, n);
+        Print_paths(global_pred, n, global_dist);
         FILE *dijkstra_graph_nT = NULL;
         dijkstra_graph_nT = fopen("dijkstra_graph_nT.txt", "a");
         if (dijkstra_graph_nT == NULL)
@@ -112,7 +110,7 @@ int main(int argc, char **argv)
         {
             printf("opening output file\n");
         }
-        
+
         fprintf(dijkstra_graph_nT, "%d, ", n);                      // so luong mau
         fprintf(dijkstra_graph_nT, "%f, ", total_time);             // t_w_comm
         fprintf(dijkstra_graph_nT, "%f\n", total_time - comm_time); // t_wo_comm:
@@ -124,8 +122,9 @@ int main(int argc, char **argv)
         free(global_dist);
         free(global_pred);
     }
-        //In ket qua do tg
-    if (my_rank == 0) {
+    // In ket qua do tg
+    if (my_rank == 0)
+    {
         printf("t_w_comm: %f s \n", total_time);
         printf("t_wo_comm: %f s \n", total_time - comm_time);
     }
@@ -147,7 +146,6 @@ int Read_n(int my_rank, MPI_Comm comm)
     MPI_Bcast(&n, 1, MPI_INT, 0, comm);
     return n;
 }
-
 
 MPI_Datatype Build_blk_col_type(int n, int loc_n)
 {
@@ -187,10 +185,15 @@ void Read_matrix(int loc_mat[], int n, int loc_n,
                 scanf("%d", &mat[i * n + j]);
     }
     // Bat dau do thoi gian truyen thong
-    double start = MPI_Wtime();
+    // double start = MPI_Wtime();
     MPI_Scatter(mat, 1, blk_col_mpi_t, loc_mat, n * loc_n, MPI_INT, 0, comm);
-    double end = MPI_Wtime();
-    //ket thuc do thoi gian truyen thong
+    // double end = MPI_Wtime();
+    if (my_rank == 0)
+    {
+        printf("----Matrix----\n");
+        Print_matrix(mat, n, n);
+    }
+    // ket thuc do thoi gian truyen thong
 
     // if (my_rank == 0) {
     //     printf("Twcomm MPI_Scatter: %f s \n", end - start);
@@ -250,7 +253,7 @@ void Dijkstra(int loc_mat[], int loc_dist[], int loc_pred[], int loc_n, int n,
             my_min[1] = -1;
         }
 
-        //do thoi gian truyen thong
+        // do thoi gian truyen thong
         start = MPI_Wtime();
         /* Get the minimum distance found by the processes and store that
            distance and the global vertex in glbl_min
@@ -326,7 +329,7 @@ void Print_matrix(int mat[], int rows, int cols)
     {
         for (j = 0; j < cols; j++)
             if (mat[i * cols + j] == INFINITY)
-                printf("i ");
+                printf("inf ");
             else
                 printf("%d ", mat[i * cols + j]);
         printf("\n");
@@ -354,7 +357,7 @@ void Print_dists(int global_dist[], int n)
     printf("\n");
 }
 
-void Print_paths(int global_pred[], int n)
+void Print_paths(int global_pred[], int n, int global_dist[])
 {
     int v, w, *path, count, i;
 
@@ -365,17 +368,26 @@ void Print_paths(int global_pred[], int n)
     for (v = 1; v < n; v++)
     {
         printf("%3d:    ", v);
-        count = 0;
-        w = v;
-        while (w != 0)
+        if (global_dist[v] == INFINITY)
         {
-            path[count] = w;
-            count++;
-            w = global_pred[w];
+            printf("can't reach");
         }
-        printf("0 ");
-        for (i = count - 1; i >= 0; i--)
-            printf("%d ", path[i]);
+        else
+        {
+            count = 0;
+            w = v;
+            while (w != 0)
+            {
+                path[count] = w;
+                count++;
+                w = global_pred[w];
+            }
+            printf("0 ");
+            for (i = count - 1; i >= 0; i--)
+            {
+                printf("%d ", path[i]);
+            }
+        }
         printf("\n");
     }
 
