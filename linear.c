@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     // printf("Samples %d\n", n_samples);
     // Read matrix data , X = original values, append 1 for bias
     if(n_samples <=100){
-        BATCH_SIZE = 2;
+        BATCH_SIZE = 4;
     }
     double **X = (double **)malloc(n_samples * sizeof(double *));
     for (int i = 0; i < n_samples; ++i)
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
     fscanf(file, "%d", &data_dim_test);
     
     if(n_samples_test<=100){
-        BATCH_SIZE = 2;
+        BATCH_SIZE = 4;
     }else
         BATCH_SIZE = 16;
     double **X_test = (double **)malloc(n_samples_test * sizeof(double *));

@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import sys
 
 def generate_linear_data(n_samples, num_attributes, noise_scale=0.5):
   """Generates a linear dataset with random features and labels.
@@ -45,6 +46,9 @@ def save_data(filename, X, Y):
 
 if __name__ == "__main__":
   n_samples = int(input("so luong mau:"))
+  if n_samples < 100:
+    print('n_samples must >= 100')
+    sys.exit(0)
   num_attributes = int(input("so chieu du lieu:"))
   noise_scale = 0.5  # Adjust noise level as needed
 
