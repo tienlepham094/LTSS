@@ -124,8 +124,8 @@ int main(int argc, char **argv)
     // In ket qua do tg
     if (my_rank == 0)
     {
-        printf("total time: %f s\n", total_time);
-        printf("t_w_comm: %f s \n", comm_time);
+        // printf("total time: %f s\n", total_time);
+        printf("t_w_comm: %f s \n", total_time);
         printf("t_wo_comm: %f s \n", total_time - comm_time);
     }
     free(loc_mat);
