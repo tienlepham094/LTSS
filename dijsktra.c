@@ -142,8 +142,15 @@ int Read_n(int my_rank, MPI_Comm comm)
 
     if (my_rank == 0)
         scanf("%d", &n);
-
+    if(my_rank == 0){
+        start = MPI_Wtime();
+    }
     MPI_Bcast(&n, 1, MPI_INT, 0, comm);
+    if (my_rank == 0)
+    {
+        end = MPI_Wtime();
+        comm_time += end - start;
+    }
     return n;
 }
 
