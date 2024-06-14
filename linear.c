@@ -11,8 +11,8 @@ void shuffle(int *array, int n);
 int main(int argc, char *argv[])
 {
     int DEBUG = 0;
-    int EVAL_STEP = 100;
-    int MAX_STEP = 500;
+    int EVAL_STEP = 10;
+    int MAX_STEP = 100;
     int BATCH_SIZE = 16;
     double LR = 0.001;
 
@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
     double *Y_test = (double *)malloc(n_samples_test * sizeof(double));
 
     n_batches = (int)n_samples_test / BATCH_SIZE;
-  
+    
     if (data_dim_test != data_dim)
     {
         printf("File test error\n");
@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
     part_mse = 0;
     double part_mae = 0;
     double mae = 0;
-
+    batch_size_per_machine = (int)BATCH_SIZE / n_machines;
     while (batch_id < n_batches)
     {
         start = batch_id * BATCH_SIZE;
